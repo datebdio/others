@@ -1,0 +1,6 @@
+data/
+*.log
+src/companion/ChatGPTProxy.exe
+src/companion/chatgptproxy
+.DS_Store
+Thumbs.db

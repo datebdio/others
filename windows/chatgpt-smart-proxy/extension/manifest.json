@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "ChatGPT 智能代理",
+  "version": "0.2.0",
+  "description": "使用本机 Xray 为 ChatGPT / AI 网站提供按域名分流代理。",
+  "permissions": ["proxy", "storage"],
+  "host_permissions": ["http://127.0.0.1/*"],
+  "background": {"service_worker": "background.js"},
+  "action": {
+    "default_title": "ChatGPT 智能代理",
+    "default_popup": "popup.html"
+  }
+}

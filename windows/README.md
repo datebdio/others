@@ -8,9 +8,11 @@
 
 ## 项目列表
 
-当前暂无独立正式项目。
+### [ChatGPT Smart Proxy](chatgpt-smart-proxy/)
 
-> 如果某个 Windows BAT 属于一个跨平台项目，例如 VLESS + Cloudflare 的测速 BAT，则继续放在对应项目目录中，不单独拆到这里。
+Windows + Chrome/Edge 的轻量 AI 网站分流代理工具。浏览器扩展负责 PAC 和节点界面，Go 后台负责 Xray、多节点管理和启停；支持 VLESS / VMess / Trojan / 完整 Xray JSON。
+
+当前版本：`v0.2.0`
 
 ## 计划分类
 

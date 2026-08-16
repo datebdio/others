@@ -1,0 +1,64 @@
+name: Build ChatGPT Smart Proxy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'windows/chatgpt-smart-proxy/src/**'
+      - 'windows/chatgpt-smart-proxy/extension/**'
+      - 'windows/chatgpt-smart-proxy/install.cmd'
+      - 'windows/chatgpt-smart-proxy/使用说明.txt'
+      - 'windows/chatgpt-smart-proxy/licenses/**'
+      - 'windows/chatgpt-smart-proxy/scripts/package.ps1'
+      - '.github/workflows/chatgpt-smart-proxy-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: ${{ !contains(github.event.head_commit.message, '[skip package]') }}
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore bootstrapped Go source
+        shell: pwsh
+        run: |
+          $dir = 'windows/chatgpt-smart-proxy/src/companion'
+          $p0 = Join-Path $dir '.main.go.gz.b64.00'
+          $p1 = Join-Path $dir '.main.go.gz.b64.01'
+          if ((Test-Path $p0) -and (Test-Path $p1)) {
+            $b64 = (Get-Content $p0 -Raw).Trim() + (Get-Content $p1 -Raw).Trim()
+            $gzBytes = [Convert]::FromBase64String($b64)
+            $input = New-Object System.IO.MemoryStream(,$gzBytes)
+            $gzip = New-Object System.IO.Compression.GzipStream($input, [System.IO.Compression.CompressionMode]::Decompress)
+            $output = [System.IO.File]::Create((Join-Path $dir 'main.go'))
+            $gzip.CopyTo($output)
+            $output.Close(); $gzip.Close(); $input.Close()
+            Remove-Item $p0, $p1
+          }
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+
+      - name: Build package
+        shell: pwsh
+        run: ./windows/chatgpt-smart-proxy/scripts/package.ps1 -Version 0.2.0 -XrayVersion 26.3.27
+
+      - name: Commit restored source and package
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A windows/chatgpt-smart-proxy/src/companion windows/chatgpt-smart-proxy/releases/
+          if (git diff --cached --quiet) {
+            Write-Host "Release package unchanged."
+            exit 0
+          }
+          git commit -m "Build ChatGPT Smart Proxy v0.2.0 [skip package]"
+          git push
