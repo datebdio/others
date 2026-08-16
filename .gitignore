@@ -1,0 +1,21 @@
+# Secrets / certificates
+*.key
+*.pem
+*.p12
+*.pfx
+origin.crt
+origin.key
+
+# Generated per-server files
+deploy-info.txt
+vless-nodes.txt
+vless-candidate-domains.txt
+test-vless-domains.bat
+domain_speed_results.csv
+recommended_vless.txt
+
+# Logs / temp
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
