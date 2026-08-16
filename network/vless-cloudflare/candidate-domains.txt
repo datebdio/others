@@ -1,0 +1,13 @@
+# NAME|ADDRESS|TYPE|FOR|NOTE
+BASE|__BASE__|Normal Cloudflare|Telecom/Unicom/Mobile|Own proxied business hostname. Keep as baseline and fallback.
+CF090227|cf.090227.xyz|Third-party dynamic optimized|Telecom/Unicom/Mobile candidate|Wildcard CF optimized domain; direct cf.090227.xyz has the same effect as custom prefixes according to the source site.
+BYOIP|cloudflare-dl.byoip.top|Third-party dynamic optimized|Telecom/Unicom/Mobile candidate|Three-network candidate maintained by fishcpy/NB service.
+CF877774|cf.877774.xyz|Third-party dynamic optimized|Telecom/Unicom/Mobile candidate|Three-network candidate maintained by cf.877774.xyz.
+SAAS|saas.sin.fan|Third-party dynamic optimized|Telecom/Unicom/Mobile candidate|Three-network candidate maintained by MIYU.
+MOBILE|bestcf.030101.xyz|Carrier-oriented optimized|China Mobile|Source site explicitly labels this as China Mobile specific.
+CF182682|cloudflare.182682.xyz|Third-party optimized|General candidate|Maintained by WeTest.Vip; test locally before use.
+VISA|www.visa.cn|Official-site Cloudflare domain|General candidate|Visa China official hostname using Cloudflare; must use the www hostname.
+MFA|mfa.gov.ua|Official-site Cloudflare domain|General candidate|Ukraine MFA official hostname using Cloudflare.
+SHOPIFY|www.shopify.com|Official-site Cloudflare domain|General candidate|Shopify official hostname using Cloudflare; performance can vary substantially by network.
+UBISOFT|store.ubi.com|Official-site Cloudflare domain|General candidate|Ubisoft store hostname using Cloudflare.
+NEXUS|staticdelivery.nexusmods.com|Official-site Cloudflare domain|General candidate|NexusMods static-delivery hostname using Cloudflare.
