@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-SCRIPT_VERSION="1.1.0"
+SCRIPT_VERSION="1.1.1"
 CANDIDATE_URL="https://raw.githubusercontent.com/datebdio/others/main/network/vless-cloudflare/candidate-domains.txt"
 
 XRAY_BIN="/usr/local/bin/xray"
@@ -323,14 +323,14 @@ echo "[11/12] Loading candidate Cloudflare entry domains..."
 if ! curl -fsSL "$CANDIDATE_URL" -o "$CANDIDATE_FILE"; then
     echo "Warning: Could not download candidate list. Using embedded fallback list."
     cat > "$CANDIDATE_FILE" <<'CANDIDATES'
-# NAME|ADDRESS|INTRO|RECOMMEND
-BASE|__BASE__|自己的 Cloudflare 业务域名，作为原始入口和故障兜底。|电信/移动/联通
-CF090227|cf.090227.xyz|cf.090227.xyz 站点自己的三网优选域名。|电信/移动/联通
-VISA|www.visa.cn|Visa 中国官网 Cloudflare 域名，必须使用带 www 的地址。|电信/移动/联通
-MFA|mfa.gov.ua|乌克兰外交部官网 Cloudflare 域名。|电信/移动/联通
-SHOPIFY|www.shopify.com|Shopify 官网 Cloudflare 域名。|电信/移动/联通
-UBISOFT|store.ubi.com|Ubisoft 官方商店 Cloudflare 域名。|电信/移动/联通
-NEXUS|staticdelivery.nexusmods.com|NexusMods 静态资源 Cloudflare 域名。|电信/移动/联通
+# NAME|ADDRESS|INTRO
+BASE|__BASE__|自己的 Cloudflare 业务域名，作为原始入口和故障兜底。
+CF090227|cf.090227.xyz|cf.090227.xyz 站点自己的三网优选域名。
+VISA|www.visa.cn|Visa 中国官网 Cloudflare 域名，必须使用带 www 的地址。
+MFA|mfa.gov.ua|乌克兰外交部官网 Cloudflare 域名。
+SHOPIFY|www.shopify.com|Shopify 官网 Cloudflare 域名。
+UBISOFT|store.ubi.com|Ubisoft 官方商店 Cloudflare 域名。
+NEXUS|staticdelivery.nexusmods.com|NexusMods 静态资源 Cloudflare 域名。
 CANDIDATES
 fi
 
@@ -360,7 +360,7 @@ NODES
 ============================================================
 EOF
 
-while IFS='|' read -r NAME ADDRESS INTRO RECOMMEND; do
+while IFS='|' read -r NAME ADDRESS INTRO; do
     [[ -z "$NAME" || "$NAME" == \#* ]] && continue
     [[ "$ADDRESS" == "__BASE__" ]] && ADDRESS="$DOMAIN"
 
@@ -370,7 +370,6 @@ while IFS='|' read -r NAME ADDRESS INTRO RECOMMEND; do
         echo "[$NAME]"
         echo "Address  : $ADDRESS"
         echo "域名介绍 : $INTRO"
-        echo "推荐     : $RECOMMEND"
         echo
         echo "vless://${UUID}@${ADDRESS}:443?encryption=none&security=tls&sni=${DOMAIN}&type=ws&host=${DOMAIN}&path=${ENC_PATH}&alpn=http%2F1.1#${DOMAIN}-${NAME}"
     } >> "$NODES_FILE"
@@ -450,7 +449,7 @@ if not errorlevel 1 (
 
 EOF
 
-while IFS='|' read -r NAME ADDRESS INTRO RECOMMEND; do
+while IFS='|' read -r NAME ADDRESS INTRO; do
     [[ -z "$NAME" || "$NAME" == \#* ]] && continue
     [[ "$ADDRESS" == "__BASE__" ]] && ADDRESS="$DOMAIN"
     printf 'call :TEST "%s" "%s"\r\n' "$NAME" "$ADDRESS" >> "$BAT_FILE"
