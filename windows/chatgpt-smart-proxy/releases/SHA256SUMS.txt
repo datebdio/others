@@ -1,1 +1,1 @@
-7af9bbe48a4076043cd90658a9c2c3341663bd6c0c86bd0710ad9ecb31679c55  ChatGPT-Smart-Proxy-v0.2.0-Windows-x64.zip
+2547fc8ff96e5c584d6b11e75ae4873c10b483f555b981556ccbe7a66f7b6742  ChatGPT-Smart-Proxy-v0.2.0-Windows-x64.zip
