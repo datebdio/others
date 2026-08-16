@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-SCRIPT_VERSION="1.0.0"
+SCRIPT_VERSION="1.1.0"
 CANDIDATE_URL="https://raw.githubusercontent.com/datebdio/others/main/network/vless-cloudflare/candidate-domains.txt"
 
 XRAY_BIN="/usr/local/bin/xray"
@@ -41,9 +41,7 @@ rollback() {
 
     set +e
 
-    if [[ -f "$BACKUP_DIR/config.json" ]]; then
-        cp -a "$BACKUP_DIR/config.json" "$XRAY_CFG"
-    fi
+    [[ -f "$BACKUP_DIR/config.json" ]] && cp -a "$BACKUP_DIR/config.json" "$XRAY_CFG"
 
     if [[ -n "${NGINX_SITE:-}" && -f "$BACKUP_DIR/nginx-site" ]]; then
         cp -a "$BACKUP_DIR/nginx-site" "$NGINX_SITE"
@@ -66,19 +64,13 @@ rollback() {
 
 trap rollback EXIT
 
-if [[ "$(id -u)" -ne 0 ]]; then
-    die "Run this script as root."
-fi
-
-if [[ ! -r /etc/os-release ]]; then
-    die "Cannot identify operating system."
-fi
+[[ "$(id -u)" -eq 0 ]] || die "Run this script as root."
+[[ -r /etc/os-release ]] || die "Cannot identify operating system."
 
 . /etc/os-release
-
 case "${ID:-}" in
     debian|ubuntu) ;;
-    *) die "Version 1.0 supports Debian/Ubuntu only. Detected: ${ID:-unknown}" ;;
+    *) die "Version 1.1 supports Debian/Ubuntu only. Detected: ${ID:-unknown}" ;;
 esac
 
 DOMAIN="${1:-}"
@@ -136,18 +128,15 @@ KEY_PUB="$(
 [[ "$CERT_PUB" == "$KEY_PUB" ]] || die "Certificate and private key do not match."
 
 if openssl x509 -help 2>&1 | grep -q -- "-checkhost"; then
-    if ! openssl x509 -in "$CERT_INPUT" -noout -checkhost "$DOMAIN" >/dev/null 2>&1; then
+    openssl x509 -in "$CERT_INPUT" -noout -checkhost "$DOMAIN" >/dev/null 2>&1 || \
         die "Certificate does not match hostname $DOMAIN."
-    fi
 fi
 
 echo "Certificate/key: OK"
 
 echo
 echo "[3/12] Preparing dedicated Xray service user..."
-if ! getent group "$XRAY_GROUP" >/dev/null; then
-    groupadd --system "$XRAY_GROUP"
-fi
+getent group "$XRAY_GROUP" >/dev/null || groupadd --system "$XRAY_GROUP"
 
 if ! id "$XRAY_USER" >/dev/null 2>&1; then
     useradd --system \
@@ -183,9 +172,7 @@ echo "WebSocketPath: $WSPATH"
 echo "InternalPort : $XRAY_PORT"
 
 mkdir -p "$(dirname "$XRAY_CFG")"
-if [[ -f "$XRAY_CFG" ]]; then
-    cp -a "$XRAY_CFG" "$BACKUP_DIR/config.json"
-fi
+[[ -f "$XRAY_CFG" ]] && cp -a "$XRAY_CFG" "$BACKUP_DIR/config.json"
 
 echo
 echo "[6/12] Writing Xray configuration..."
@@ -230,7 +217,6 @@ EOF
 
 chown root:"$XRAY_GROUP" "$XRAY_CFG"
 chmod 640 "$XRAY_CFG"
-
 "$XRAY_BIN" run -test -c "$XRAY_CFG"
 
 echo
@@ -239,8 +225,8 @@ mkdir -p "$CERT_DIR"
 CERT_DST="$CERT_DIR/${DOMAIN}.crt"
 KEY_DST="$CERT_DIR/${DOMAIN}.key"
 
-if [[ -f "$CERT_DST" ]]; then cp -a "$CERT_DST" "$BACKUP_DIR/origin.crt"; fi
-if [[ -f "$KEY_DST" ]]; then cp -a "$KEY_DST" "$BACKUP_DIR/origin.key"; fi
+[[ -f "$CERT_DST" ]] && cp -a "$CERT_DST" "$BACKUP_DIR/origin.crt"
+[[ -f "$KEY_DST" ]] && cp -a "$KEY_DST" "$BACKUP_DIR/origin.key"
 
 install -m 644 "$CERT_INPUT" "$CERT_DST"
 install -m 600 "$KEY_INPUT" "$KEY_DST"
@@ -249,10 +235,7 @@ echo
 echo "[8/12] Writing Nginx configuration..."
 mkdir -p "$NGINX_AVAILABLE" "$NGINX_ENABLED"
 NGINX_SITE="$NGINX_AVAILABLE/$DOMAIN"
-
-if [[ -f "$NGINX_SITE" ]]; then
-    cp -a "$NGINX_SITE" "$BACKUP_DIR/nginx-site"
-fi
+[[ -f "$NGINX_SITE" ]] && cp -a "$NGINX_SITE" "$BACKUP_DIR/nginx-site"
 
 cat > "$NGINX_SITE" <<EOF
 server {
@@ -267,15 +250,12 @@ server {
     location = ${WSPATH} {
         proxy_pass http://127.0.0.1:${XRAY_PORT};
         proxy_http_version 1.1;
-
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_set_header Host \$host;
-
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
-
         proxy_read_timeout 3600s;
         proxy_send_timeout 3600s;
     }
@@ -288,7 +268,6 @@ server {
 EOF
 
 ln -sfn "$NGINX_SITE" "$NGINX_ENABLED/$DOMAIN"
-
 nginx -t
 
 echo
@@ -298,15 +277,12 @@ systemctl enable "$XRAY_SERVICE" >/dev/null
 systemctl restart "$XRAY_SERVICE"
 systemctl enable nginx >/dev/null
 systemctl restart nginx
-
 sleep 2
 
 systemctl is-active --quiet "$XRAY_SERVICE" || die "xray.service is not active."
 systemctl is-active --quiet nginx || die "nginx is not active."
-
-if ! ss -lntH | awk '{print $4}' | grep -Eq ":${XRAY_PORT}$"; then
+ss -lntH | awk '{print $4}' | grep -Eq ":${XRAY_PORT}$" || \
     die "Xray is not listening on internal port $XRAY_PORT."
-fi
 
 echo
 echo "[10/12] Running local HTTPS and WebSocket tests..."
@@ -334,12 +310,12 @@ WS_HEADERS="$(
       "https://${DOMAIN}${WSPATH}" 2>/dev/null || true
 )"
 
-if ! grep -qiE '^HTTP/[0-9.]+ 101 ' <<<"$WS_HEADERS"; then
+grep -qiE '^HTTP/[0-9.]+ 101 ' <<<"$WS_HEADERS" || {
     echo "$WS_HEADERS"
     die "Local WebSocket handshake did not return HTTP 101."
-fi
+}
 
-echo "HTTPS test   : 200 OK"
+echo "HTTPS test    : 200 OK"
 echo "WebSocket test: 101 Switching Protocols"
 
 echo
@@ -347,17 +323,14 @@ echo "[11/12] Loading candidate Cloudflare entry domains..."
 if ! curl -fsSL "$CANDIDATE_URL" -o "$CANDIDATE_FILE"; then
     echo "Warning: Could not download candidate list. Using embedded fallback list."
     cat > "$CANDIDATE_FILE" <<'CANDIDATES'
-# NAME|ADDRESS|TYPE|FOR|NOTE
-BASE|__BASE__|Normal Cloudflare|Telecom/Unicom/Mobile|Own proxied business hostname. Keep as baseline and fallback.
-CF090227|cf.090227.xyz|Third-party dynamic optimized|Telecom/Unicom/Mobile candidate|Wildcard CF optimized domain.
-BYOIP|cloudflare-dl.byoip.top|Third-party dynamic optimized|Telecom/Unicom/Mobile candidate|Three-network candidate.
-CF877774|cf.877774.xyz|Third-party dynamic optimized|Telecom/Unicom/Mobile candidate|Three-network candidate.
-MOBILE|bestcf.030101.xyz|Carrier-oriented optimized|China Mobile|China Mobile specific candidate.
-VISA|www.visa.cn|Official-site Cloudflare domain|General candidate|Visa China official hostname using Cloudflare.
-MFA|mfa.gov.ua|Official-site Cloudflare domain|General candidate|Ukraine MFA official hostname using Cloudflare.
-SHOPIFY|www.shopify.com|Official-site Cloudflare domain|General candidate|Shopify official hostname using Cloudflare.
-UBISOFT|store.ubi.com|Official-site Cloudflare domain|General candidate|Ubisoft store hostname using Cloudflare.
-NEXUS|staticdelivery.nexusmods.com|Official-site Cloudflare domain|General candidate|NexusMods static-delivery hostname using Cloudflare.
+# NAME|ADDRESS|INTRO|RECOMMEND
+BASE|__BASE__|自己的 Cloudflare 业务域名，作为原始入口和故障兜底。|电信/移动/联通
+CF090227|cf.090227.xyz|cf.090227.xyz 站点自己的三网优选域名。|电信/移动/联通
+VISA|www.visa.cn|Visa 中国官网 Cloudflare 域名，必须使用带 www 的地址。|电信/移动/联通
+MFA|mfa.gov.ua|乌克兰外交部官网 Cloudflare 域名。|电信/移动/联通
+SHOPIFY|www.shopify.com|Shopify 官网 Cloudflare 域名。|电信/移动/联通
+UBISOFT|store.ubi.com|Ubisoft 官方商店 Cloudflare 域名。|电信/移动/联通
+NEXUS|staticdelivery.nexusmods.com|NexusMods 静态资源 Cloudflare 域名。|电信/移动/联通
 CANDIDATES
 fi
 
@@ -379,32 +352,25 @@ TLS             : ON
 ALPN            : http/1.1
 Xray internal   : 127.0.0.1:${XRAY_PORT}
 
-IMPORTANT:
-- Address selects the Cloudflare entry.
-- Host/SNI always remain ${DOMAIN}.
-- Optimized domains are candidates, not guarantees.
-- Always keep BASE as a troubleshooting/fallback node.
-- Third-party optimized domains depend on external DNS maintainers.
+Rule: only Address changes. Host/SNI always remain ${DOMAIN}.
+Keep BASE as fallback.
 
 ============================================================
 NODES
 ============================================================
 EOF
 
-while IFS='|' read -r NAME ADDRESS TYPE FOR_NET NOTE; do
+while IFS='|' read -r NAME ADDRESS INTRO RECOMMEND; do
     [[ -z "$NAME" || "$NAME" == \#* ]] && continue
-    if [[ "$ADDRESS" == "__BASE__" ]]; then
-        ADDRESS="$DOMAIN"
-    fi
+    [[ "$ADDRESS" == "__BASE__" ]] && ADDRESS="$DOMAIN"
 
     {
         echo
         echo "------------------------------------------------------------"
         echo "[$NAME]"
-        echo "Address : $ADDRESS"
-        echo "Type    : $TYPE"
-        echo "For     : $FOR_NET"
-        echo "Note    : $NOTE"
+        echo "Address  : $ADDRESS"
+        echo "域名介绍 : $INTRO"
+        echo "推荐     : $RECOMMEND"
         echo
         echo "vless://${UUID}@${ADDRESS}:443?encryption=none&security=tls&sni=${DOMAIN}&type=ws&host=${DOMAIN}&path=${ENC_PATH}&alpn=http%2F1.1#${DOMAIN}-${NAME}"
     } >> "$NODES_FILE"
@@ -419,15 +385,13 @@ setlocal EnableExtensions EnableDelayedExpansion
 title VLESS Domain Download Speed Test - ${DOMAIN}
 
 REM Auto-generated by deploy.sh v${SCRIPT_VERSION}
-REM This BAT does not modify v2rayN.
-REM It keeps UUID/Path/Host/SNI fixed and changes only Address.
+REM Only Address changes. UUID / Path / Host / SNI stay fixed.
 
 set "UUID=${UUID}"
 set "HOST=${DOMAIN}"
 set "SNI=${DOMAIN}"
 set "WSPATH=${WSPATH}"
 set "PORT=443"
-
 set "SOCKS_PORT=10999"
 set "TEST_BYTES=20000000"
 set "ROUNDS=3"
@@ -449,17 +413,15 @@ echo.
 echo ============================================================
 echo VLESS Cloudflare Domain Speed Test
 echo ============================================================
-echo Server          : %HOST%
-echo Test size       : 20,000,000 bytes
-echo Rounds/domain   : %ROUNDS%
-echo Temp SOCKS      : 127.0.0.1:%SOCKS_PORT%
+echo Server        : %HOST%
+echo Test size     : 20,000,000 bytes
+echo Rounds/domain : %ROUNDS%
 echo ============================================================
 echo.
 
 if exist "%BASE%bin\Xray\xray.exe" set "XRAY=%BASE%bin\Xray\xray.exe"
 if not defined XRAY if exist "%BASE%bin\xray\xray.exe" set "XRAY=%BASE%bin\xray\xray.exe"
 if not defined XRAY if exist "%BASE%xray.exe" set "XRAY=%BASE%xray.exe"
-
 if not defined XRAY (
     for /r "%BASE%" %%I in (xray.exe) do (
         if not defined XRAY if exist "%%~fI" set "XRAY=%%~fI"
@@ -469,14 +431,12 @@ if not defined XRAY (
 if not defined XRAY (
     echo ERROR: xray.exe was not found under:
     echo %BASE%
-    echo.
     echo Put this BAT inside your v2rayN folder.
     pause
     exit /b 1
 )
 
-echo Xray:
-echo %XRAY%
+echo Xray: %XRAY%
 echo.
 
 netstat -ano | findstr /R /C:":%SOCKS_PORT% .*LISTENING" >nul 2>&1
@@ -486,17 +446,14 @@ if not errorlevel 1 (
     exit /b 1
 )
 
-> "%RESULT%" echo Name,Domain,Type,For,SuccessfulRuns,AverageMBps,BestMBps,WorstMBps,Status
+> "%RESULT%" echo Name,Domain,SuccessfulRuns,AverageMBps,BestMBps,WorstMBps,Status
 
 EOF
 
-while IFS='|' read -r NAME ADDRESS TYPE FOR_NET NOTE; do
+while IFS='|' read -r NAME ADDRESS INTRO RECOMMEND; do
     [[ -z "$NAME" || "$NAME" == \#* ]] && continue
-    if [[ "$ADDRESS" == "__BASE__" ]]; then
-        ADDRESS="$DOMAIN"
-    fi
-    printf 'call :TEST "%s" "%s" "%s" "%s"\r\n' \
-        "$NAME" "$ADDRESS" "$TYPE" "$FOR_NET" >> "$BAT_FILE"
+    [[ "$ADDRESS" == "__BASE__" ]] && ADDRESS="$DOMAIN"
+    printf 'call :TEST "%s" "%s"\r\n' "$NAME" "$ADDRESS" >> "$BAT_FILE"
 done < "$CANDIDATE_FILE"
 
 cat >> "$BAT_FILE" <<'EOF'
@@ -506,8 +463,6 @@ goto :FINAL
 :TEST
 set "NAME=%~1"
 set "DOMAIN=%~2"
-set "TYPE=%~3"
-set "FORNET=%~4"
 set "GOOD=0"
 set "SUM=0"
 set "BEST=0"
@@ -518,9 +473,7 @@ set "READY=0"
 echo.
 echo ============================================================
 echo [%NAME%]
-echo Address : %DOMAIN%
-echo Type    : %TYPE%
-echo For     : %FORNET%
+echo Address: %DOMAIN%
 echo ============================================================
 
 > "%CFG%" (
@@ -573,7 +526,7 @@ echo ============================================================
 "%XRAY%" run -test -c "%CFG%" >nul 2>&1
 if errorlevel 1 (
     echo Xray config test: FAILED
-    >> "%RESULT%" echo %NAME%,%DOMAIN%,"%TYPE%","%FORNET%",0,0,0,0,CONFIG_FAILED
+    >> "%RESULT%" echo %NAME%,%DOMAIN%,0,0,0,0,CONFIG_FAILED
     exit /b 0
 )
 
@@ -601,7 +554,7 @@ for /L %%W in (1,1,8) do (
 if "!READY!"=="0" (
     echo Temporary Xray start: FAILED
     if exist "%XRAY_ERR%" type "%XRAY_ERR%"
-    >> "%RESULT%" echo %NAME%,%DOMAIN%,"%TYPE%","%FORNET%",0,0,0,0,XRAY_START_FAILED
+    >> "%RESULT%" echo %NAME%,%DOMAIN%,0,0,0,0,XRAY_START_FAILED
     goto :TEST_CLEANUP
 )
 
@@ -618,13 +571,13 @@ if exist "%CURL_OUT%" set /p PRE_HTTP=<"%CURL_OUT%"
 if not "!PRE_RC!"=="0" (
     echo Precheck: FAILED  CurlExit=!PRE_RC!
     if exist "%CURL_ERR%" type "%CURL_ERR%"
-    >> "%RESULT%" echo %NAME%,%DOMAIN%,"%TYPE%","%FORNET%",0,0,0,0,FAILED
+    >> "%RESULT%" echo %NAME%,%DOMAIN%,0,0,0,0,FAILED
     goto :TEST_CLEANUP
 )
 
 if not "!PRE_HTTP!"=="200" (
     echo Precheck: FAILED  HTTP=!PRE_HTTP!
-    >> "%RESULT%" echo %NAME%,%DOMAIN%,"%TYPE%","%FORNET%",0,0,0,0,FAILED
+    >> "%RESULT%" echo %NAME%,%DOMAIN%,0,0,0,0,FAILED
     goto :TEST_CLEANUP
 )
 
@@ -665,9 +618,7 @@ for /L %%R in (1,1,%ROUNDS%) do (
         if !SPEED! GTR !BEST! set "BEST=!SPEED!"
         if !SPEED! LSS !WORST! set "WORST=!SPEED!"
 
-        set "MBPS="
         for /f "delims=" %%M in ('powershell -NoProfile -Command "([math]::Round(([double]!SPEED!)/1MB,2)).ToString([Globalization.CultureInfo]::InvariantCulture)"') do set "MBPS=%%M"
-
         echo Run %%R: !MBPS! MB/s   Time=!TOTAL!s
     ) else (
         echo Run %%R: FAILED   CurlExit=!RC! HTTP=!HTTP! Downloaded=!SIZE!
@@ -694,12 +645,12 @@ if !GOOD! GTR 0 (
     echo Worst  : !WORST_MB! MB/s
     echo Success: !GOOD!/%ROUNDS%
 
-    >> "%RESULT%" echo %NAME%,%DOMAIN%,"%TYPE%","%FORNET%",!GOOD!,!AVG_MB!,!BEST_MB!,!WORST_MB!,!STATUS!
+    >> "%RESULT%" echo %NAME%,%DOMAIN%,!GOOD!,!AVG_MB!,!BEST_MB!,!WORST_MB!,!STATUS!
 ) else (
     echo.
     echo Average: FAILED
     echo Success: 0/%ROUNDS%
-    >> "%RESULT%" echo %NAME%,%DOMAIN%,"%TYPE%","%FORNET%",0,0,0,0,FAILED
+    >> "%RESULT%" echo %NAME%,%DOMAIN%,0,0,0,0,FAILED
 )
 
 :TEST_CLEANUP
@@ -721,16 +672,13 @@ set "UUID_ENV=%UUID%"
 set "HOST_ENV=%HOST%"
 set "WSPATH_ENV=%WSPATH%"
 
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$r=Import-Csv $env:RESULT_ENV; $ok=$r | Where-Object {$_.Status -eq 'OK'} | Sort-Object @{Expression={[double]$_.AverageMBps};Descending=$true}; $ok | Format-Table Name,Domain,For,SuccessfulRuns,AverageMBps,BestMBps,WorstMBps,Status -AutoSize; $enc=[uri]::EscapeDataString($env:WSPATH_ENV); $lines=@(); $top=@($ok | Select-Object -First 2); if($top.Count -ge 1){$a=$top[0].Domain; $lines += '[PRIMARY]'; $lines += ('vless://'+$env:UUID_ENV+'@'+$a+':443?encryption=none&security=tls&sni='+$env:HOST_ENV+'&type=ws&host='+$env:HOST_ENV+'&path='+$enc+'&alpn=http%2F1.1#PRIMARY-'+$a); $lines += ''}; if($top.Count -ge 2){$a=$top[1].Domain; $lines += '[BACKUP]'; $lines += ('vless://'+$env:UUID_ENV+'@'+$a+':443?encryption=none&security=tls&sni='+$env:HOST_ENV+'&type=ws&host='+$env:HOST_ENV+'&path='+$enc+'&alpn=http%2F1.1#BACKUP-'+$a); $lines += ''}; $lines += '[BASE-FALLBACK]'; $lines += ('vless://'+$env:UUID_ENV+'@'+$env:HOST_ENV+':443?encryption=none&security=tls&sni='+$env:HOST_ENV+'&type=ws&host='+$env:HOST_ENV+'&path='+$enc+'&alpn=http%2F1.1#BASE-'+$env:HOST_ENV); $lines | Set-Content -Encoding UTF8 $env:RECOMMENDED_ENV; Write-Host ''; Write-Host 'Recommended VLESS nodes:'; $lines | ForEach-Object {Write-Host $_}"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$r=Import-Csv $env:RESULT_ENV; $ok=$r | Where-Object {$_.Status -eq 'OK'} | Sort-Object @{Expression={[double]$_.AverageMBps};Descending=$true}; $ok | Format-Table Name,Domain,SuccessfulRuns,AverageMBps,BestMBps,WorstMBps,Status -AutoSize; $enc=[uri]::EscapeDataString($env:WSPATH_ENV); $lines=@(); $top=@($ok | Select-Object -First 2); if($top.Count -ge 1){$a=$top[0].Domain; $lines += '[PRIMARY]'; $lines += ('vless://'+$env:UUID_ENV+'@'+$a+':443?encryption=none&security=tls&sni='+$env:HOST_ENV+'&type=ws&host='+$env:HOST_ENV+'&path='+$enc+'&alpn=http%2F1.1#PRIMARY-'+$a); $lines += ''}; if($top.Count -ge 2){$a=$top[1].Domain; $lines += '[BACKUP]'; $lines += ('vless://'+$env:UUID_ENV+'@'+$a+':443?encryption=none&security=tls&sni='+$env:HOST_ENV+'&type=ws&host='+$env:HOST_ENV+'&path='+$enc+'&alpn=http%2F1.1#BACKUP-'+$a); $lines += ''}; $lines += '[BASE-FALLBACK]'; $lines += ('vless://'+$env:UUID_ENV+'@'+$env:HOST_ENV+':443?encryption=none&security=tls&sni='+$env:HOST_ENV+'&type=ws&host='+$env:HOST_ENV+'&path='+$enc+'&alpn=http%2F1.1#BASE-'+$env:HOST_ENV); $lines | Set-Content -Encoding UTF8 $env:RECOMMENDED_ENV; Write-Host ''; Write-Host 'Recommended VLESS nodes:'; $lines | ForEach-Object {Write-Host $_}"
 
 echo.
 echo Results:
 echo %RESULT%
-echo.
 echo Recommended nodes:
 echo %RECOMMENDED%
-echo.
-echo Prefer 3/3 OK results with stable WorstMBps, not only the highest peak.
 echo.
 pause
 EOF
@@ -776,6 +724,6 @@ echo
 echo "Next:"
 echo "1. Confirm Cloudflare DNS is proxied (orange cloud)."
 echo "2. Confirm SSL/TLS mode is Full (strict)."
-echo "3. Import a BASE VLESS node first and verify connectivity."
+echo "3. Import BASE first and verify connectivity."
 echo "4. Copy test-vless-domains.bat into the v2rayN folder and run it."
 echo "============================================================"
