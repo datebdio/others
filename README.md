@@ -1,60 +1,129 @@
 # others
 
-个人运维脚本与常用命令仓库。
+个人运维脚本、部署工具与常用命令仓库。
 
-这个仓库用于长期管理可复用的 VPS、Linux、Windows、网络诊断、部署与测速脚本。原则是：
+> 根目录 README 只作为 **总菜单 / 项目索引**。每个项目的详细说明、使用方法、参数、故障排查都放在对应子目录的 `README.md` 中。
 
-- **通用脚本进 GitHub**
-- **服务器实例密钥不进 GitHub**
-- 每个功能单独分目录，附带 README、用途、版本和升级记录
-- 能自动检测就自动检测，涉及覆盖已有配置时优先备份和回滚
-- 实测优先，不把“优选”标签等同于一定更快
+## 快速导航
 
-## 当前模块
+| 分类 | 说明 | 入口 |
+|---|---|---|
+| 🌐 网络 / 代理 | Cloudflare、VLESS、DNS、路由、测速等 | [进入 network/](network/) |
+| 🖥 VPS / Linux | 新机初始化、Nginx、Docker、备份、安全等 | [进入 server/](server/) |
+| 🪟 Windows | BAT、PowerShell、网络与系统工具 | [进入 windows/](windows/) |
+| 🚀 部署工具 | Web、Node.js、数据库、反代等应用部署 | [进入 deployment/](deployment/) |
+| 🩺 诊断工具 | 网络、服务器、连通性、性能检查 | [进入 diagnostics/](diagnostics/) |
+| 🗄 归档 | 已废弃或被新版替代的旧工具 | [进入 archive/](archive/) |
 
-### `network/vless-cloudflare/`
+## 当前项目
 
-Cloudflare + Nginx + VLESS/WebSocket 新 VPS 标准部署与优选域名测速。
+### 🌐 网络 / 代理
 
-包含：
+| 项目 | 功能 | 平台 | 状态 | 版本 | 入口 |
+|---|---|---|---|---|---|
+| VLESS + Cloudflare | 新 VPS 一键部署、Cloudflare 优选域名测速、自动生成 VLESS 节点 | Linux + Windows | 🧪 待新机完整验证 | v1.0.0 | [查看项目](network/vless-cloudflare/) |
 
-- `deploy.sh`：新 VPS 一键部署
-- `candidate-domains.txt`：Cloudflare 候选入口域名清单
-- `README.md`：完整使用说明
-- `docs/architecture.md`：链路与配置逻辑
+## 状态说明
 
-部署脚本只负责 **VPS 内部**。Cloudflare DNS、橙云和 Origin Certificate 仍由用户在 Cloudflare 后台准备。
+- ✅ **稳定**：已在目标环境完整验证，可作为常用版本
+- 🧪 **测试中**：主要功能已完成，仍需更多实际环境验证
+- 🚧 **开发中**：结构或功能尚未完成
+- 🗄 **已归档**：不再维护，仅保留历史参考
 
-## 目录规划
+## 仓库组织规则
+
+一个完整功能作为一个独立项目目录管理。例如：
+
+```text
+network/vless-cloudflare/
+├─ README.md
+├─ deploy.sh
+├─ candidate-domains.txt
+└─ docs/
+```
+
+即使项目同时包含 Linux `.sh`、Windows `.bat`、配置文件和文档，也放在 **同一个项目目录** 中，不按文件类型拆散。
+
+建议长期保持以下结构：
 
 ```text
 others/
+├─ README.md
+├─ CHANGELOG.md
 ├─ network/
-│  └─ vless-cloudflare/
+│  ├─ README.md
+│  ├─ vless-cloudflare/
+│  ├─ cloudflare-speedtest/
+│  ├─ dns-tools/
+│  └─ routing-tools/
 ├─ server/
-│  ├─ linux/
-│  └─ vps/
+│  ├─ README.md
+│  ├─ vps-init/
+│  ├─ nginx/
+│  ├─ docker/
+│  ├─ backup/
+│  └─ security/
 ├─ windows/
+│  ├─ README.md
 │  ├─ network/
-│  └─ diagnostics/
+│  ├─ maintenance/
+│  ├─ powershell/
+│  └─ batch/
+├─ deployment/
+│  ├─ README.md
+│  ├─ web/
+│  ├─ nodejs/
+│  ├─ database/
+│  └─ reverse-proxy/
 ├─ diagnostics/
+│  ├─ README.md
+│  ├─ server-check/
+│  ├─ speedtest/
+│  └─ connectivity/
 └─ archive/
+   └─ README.md
 ```
 
-后续新工具按用途继续扩展目录，不把所有脚本堆在根目录。
+## 新项目约定
+
+以后新增工具时，原则上至少包含：
+
+```text
+project-name/
+├─ README.md
+└─ 主脚本或主程序
+```
+
+项目 README 建议固定包含：
+
+1. 功能
+2. 适用场景
+3. 快速使用
+4. 文件说明
+5. 工作原理
+6. 输出结果
+7. 注意事项
+8. 故障排查
+9. 版本信息
 
 ## 安全约定
 
-不要提交：
+以下内容不要提交到仓库：
 
 - Cloudflare API Token
 - SSH 私钥
 - Origin CA 私钥
-- 实际服务器 UUID / WS Path（除非明确准备公开）
-- 账户密码、Cookie、访问令牌
+- 服务器账户密码
+- Cookie / Access Token
+- 实际生产服务器的敏感实例配置
 
-仓库中的部署脚本会在 VPS 本地生成实例参数，并输出到 `/root/` 下，不会自动上传这些实例信息到 GitHub。
+通用部署脚本可以生成 UUID、WS Path 等实例参数，但这些参数应保留在目标服务器本地，不自动回传 GitHub。
 
-## 版本
+## 最近更新
 
-变更记录见 [`CHANGELOG.md`](CHANGELOG.md)。
+- 建立仓库 Dashboard / 菜单式 README
+- 建立分类导航结构
+- 加入 `network/vless-cloudflare` 第一套项目
+- VLESS 项目支持部署、候选域名管理和 Windows 实际下载测速
+
+完整变更记录见 [CHANGELOG.md](CHANGELOG.md)。
