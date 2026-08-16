@@ -21,7 +21,7 @@
 
 | 项目 | 功能 | 平台 | 状态 | 版本 | 入口 |
 |---|---|---|---|---|---|
-| VLESS + Cloudflare | 新 VPS 一键部署、Cloudflare 优选域名测速、自动生成 VLESS 节点 | Linux + Windows | 🧪 待新机完整验证 | v1.0.0 | [查看项目](network/vless-cloudflare/) |
+| VLESS + Cloudflare | 新 VPS 一键部署、Cloudflare 优选域名测速、自动生成 VLESS 节点 | Linux + Windows | 🧪 待新机完整验证 | v1.1.0 | [查看项目](network/vless-cloudflare/) |
 
 ## 状态说明
 
@@ -121,9 +121,10 @@ project-name/
 
 ## 最近更新
 
-- 建立仓库 Dashboard / 菜单式 README
-- 建立分类导航结构
-- 加入 `network/vless-cloudflare` 第一套项目
-- VLESS 项目支持部署、候选域名管理和 Windows 实际下载测速
+- VLESS + Cloudflare 升级到 `v1.1.0`
+- 默认候选域名精简为：BASE、`cf.090227.xyz` 和主要官方站点 Cloudflare 域名
+- 移除“更多优选域名”中的第三方候选
+- 节点说明统一精简为“域名介绍 + 推荐线路”
+- Windows BAT 继续使用真实 VLESS 下载测速并自动排名
 
 完整变更记录见 [CHANGELOG.md](CHANGELOG.md)。
