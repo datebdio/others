@@ -2,7 +2,7 @@
 
 目录：`network/vless-cloudflare/`
 
-当前版本：**v1.1.0**
+当前版本：**v1.1.1**
 
 ## 功能
 
@@ -133,12 +133,11 @@ WebSocket     -> streamSettings.network = "ws"
 [节点名称]
 Address  : 域名
 域名介绍 : 简单介绍
-推荐     : 电信/移动/联通
 
 vless://...
 ```
 
-不再输出冗长的 Type / For / Note。
+不再输出 Type / For / Note，也不再维护静态“推荐线路”字段。
 
 ### `test-vless-domains.bat`
 
@@ -216,23 +215,21 @@ SNI     = v3.example.com
 
 ### 当前候选
 
-| 名称 | Address | 域名介绍 | 推荐 |
-|---|---|---|---|
-| BASE | 业务域名 | 自己的 Cloudflare 原始入口和兜底 | 电信/移动/联通 |
-| CF090227 | `cf.090227.xyz` | 优选站点自己的三网优选域名 | 电信/移动/联通 |
-| VISA | `www.visa.cn` | Visa 中国官网 Cloudflare 域名 | 电信/移动/联通 |
-| MFA | `mfa.gov.ua` | 乌克兰外交部官网 Cloudflare 域名 | 电信/移动/联通 |
-| SHOPIFY | `www.shopify.com` | Shopify 官网 Cloudflare 域名 | 电信/移动/联通 |
-| UBISOFT | `store.ubi.com` | Ubisoft 官方商店 Cloudflare 域名 | 电信/移动/联通 |
-| NEXUS | `staticdelivery.nexusmods.com` | NexusMods 静态资源 Cloudflare 域名 | 电信/移动/联通 |
+| 名称 | Address | 域名介绍 |
+|---|---|---|
+| BASE | 业务域名 | 自己的 Cloudflare 原始入口和兜底 |
+| CF090227 | `cf.090227.xyz` | 优选站点自己的三网优选域名 |
+| VISA | `www.visa.cn` | Visa 中国官网 Cloudflare 域名 |
+| MFA | `mfa.gov.ua` | 乌克兰外交部官网 Cloudflare 域名 |
+| SHOPIFY | `www.shopify.com` | Shopify 官网 Cloudflare 域名 |
+| UBISOFT | `store.ubi.com` | Ubisoft 官方商店 Cloudflare 域名 |
+| NEXUS | `staticdelivery.nexusmods.com` | NexusMods 静态资源 Cloudflare 域名 |
 
-这里的“推荐”只是说明适合在哪些线路上作为候选进行测试，不代表一定比 BASE 快。最终仍以 BAT 在当前网络的真实下载结果为准。
+不再给候选域名预设电信 / 移动 / 联通推荐。最终以 BAT 在当前网络的真实下载结果为准。
 
 来源站点：
 
 https://cf.090227.xyz/
-
-其中该站当前把 `*.cf.090227.xyz` 标注为三网优选，并单独列出了 Visa、MFA、Shopify、Ubisoft、NexusMods 等官方站点 Cloudflare 域名。
 
 “官方站点域名”只表示这些 hostname 属于对应品牌/机构并使用 Cloudflare，不表示品牌方或 Cloudflare 为 VLESS/代理用途提供或背书服务。
 
