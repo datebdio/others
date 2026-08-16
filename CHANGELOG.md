@@ -2,6 +2,17 @@
 
 ## 2026-08-16
 
+### VLESS + Cloudflare v1.1.1
+
+- 移除候选域名中的静态“推荐线路”字段。
+- `candidate-domains.txt` 简化为：`NAME | ADDRESS | INTRO`。
+- `/root/vless-nodes.txt` 每个候选只保留：
+  - Address
+  - 域名介绍
+  - VLESS 链接
+- 不再预设电信 / 移动 / 联通推荐，最终以 Windows BAT 的真实下载测速结果为准。
+- 保留 BAT 的实际测速排名、PRIMARY / BACKUP / BASE 输出逻辑。
+
 ### VLESS + Cloudflare v1.1.0
 
 - 精简默认优选域名候选。
