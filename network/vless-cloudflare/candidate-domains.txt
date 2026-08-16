@@ -1,8 +1,0 @@
-# NAME|ADDRESS|INTRO
-BASE|__BASE__|自己的 Cloudflare 业务域名，作为原始入口和故障兜底。
-CF090227|cf.090227.xyz|cf.090227.xyz 站点自己的三网优选域名。
-VISA|www.visa.cn|Visa 中国官网 Cloudflare 域名，必须使用带 www 的地址。
-MFA|mfa.gov.ua|乌克兰外交部官网 Cloudflare 域名。
-SHOPIFY|www.shopify.com|Shopify 官网 Cloudflare 域名。
-UBISOFT|store.ubi.com|Ubisoft 官方商店 Cloudflare 域名。
-NEXUS|staticdelivery.nexusmods.com|NexusMods 静态资源 Cloudflare 域名。
