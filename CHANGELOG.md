@@ -2,7 +2,30 @@
 
 ## 2026-08-16
 
-### Added
+### VLESS + Cloudflare v1.1.0
+
+- 精简默认优选域名候选。
+- 保留：
+  - BASE 自己的 Cloudflare 业务域名
+  - `cf.090227.xyz` 站点自己的三网优选域名
+  - `www.visa.cn`
+  - `mfa.gov.ua`
+  - `www.shopify.com`
+  - `store.ubi.com`
+  - `staticdelivery.nexusmods.com`
+- 移除“更多优选域名”中的第三方候选，包括：
+  - `cloudflare-dl.byoip.top`
+  - `cf.877774.xyz`
+  - `saas.sin.fan`
+  - `bestcf.030101.xyz`
+  - `cloudflare.182682.xyz`
+- `candidate-domains.txt` 简化为：`NAME | ADDRESS | INTRO | RECOMMEND`。
+- `/root/vless-nodes.txt` 中每个候选只额外显示：
+  - 域名介绍
+  - 推荐线路（电信/移动/联通）
+- Windows BAT 测速结果去掉 Type / For 等冗余字段，继续保留真实 VLESS 下载测速、3 轮统计、最终排名和 PRIMARY / BACKUP / BASE 输出。
+
+### Initial
 
 - 初始化 `others` 运维脚本仓库结构。
 - 新增 `network/vless-cloudflare/` 模块。
