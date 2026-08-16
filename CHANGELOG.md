@@ -2,6 +2,32 @@
 
 ## 2026-08-16
 
+### Repository maintenance standard
+
+- 新增根目录 `AGENTS.md`，作为整个 `others` 仓库的 AI / Coding Agent 总入口。
+- 长期维护项目统一采用：
+  - `README.md`
+  - `AGENTS.md`
+  - `CHANGELOG.md`
+  - `agent-context/`
+- `agent-context/` 标准文件：
+  - `CONTEXT.md`
+  - `STATE.md`
+  - `DECISIONS.md`
+  - `HISTORY.md`
+  - `ROADMAP.md`
+- 新增 `templates/project-template/`，供未来新项目复制维护骨架。
+- 根 README、分类 README 和项目 README 都增加 AI 阅读入口，避免新对话只读普通说明后直接修改代码。
+
+### VLESS + Cloudflare v1.2.0
+
+- VLESS 项目迁移到标准长期维护结构。
+- `deploy.sh` 从项目根目录移动到 `scripts/deploy.sh`。
+- `candidate-domains.txt` 从项目根目录移动到 `config/candidate-domains.txt`。
+- 同步更新脚本中的候选域名 Raw URL、README 执行命令、目录说明和 AI 上下文。
+- 新增项目自己的 `CHANGELOG.md`；后续 VLESS 详细版本记录优先维护在项目内。
+- 本次版本主要是目录和长期维护体系升级，VLESS/Nginx/WebSocket/测速核心行为不主动改变。
+
 ### VLESS + Cloudflare v1.1.1
 
 - 移除候选域名中的静态“推荐线路”字段。
@@ -30,18 +56,14 @@
   - `saas.sin.fan`
   - `bestcf.030101.xyz`
   - `cloudflare.182682.xyz`
-- `candidate-domains.txt` 简化为：`NAME | ADDRESS | INTRO | RECOMMEND`。
-- `/root/vless-nodes.txt` 中每个候选只额外显示：
-  - 域名介绍
-  - 推荐线路（电信/移动/联通）
-- Windows BAT 测速结果去掉 Type / For 等冗余字段，继续保留真实 VLESS 下载测速、3 轮统计、最终排名和 PRIMARY / BACKUP / BASE 输出。
+- Windows BAT 测速结果去掉 Type / For 等冗余字段。
 
 ### Initial
 
 - 初始化 `others` 运维脚本仓库结构。
 - 新增 `network/vless-cloudflare/` 模块。
-- 新增新 VPS 一键部署脚本 `deploy.sh`。
-- 新增候选 Cloudflare 入口域名清单 `candidate-domains.txt`。
+- 新增新 VPS 一键部署脚本。
+- 新增候选 Cloudflare 入口域名清单。
 - 部署完成后自动生成：
   - `/root/deploy-info.txt`
   - `/root/vless-nodes.txt`
