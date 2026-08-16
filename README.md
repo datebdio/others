@@ -2,7 +2,9 @@
 
 个人运维脚本、部署工具与常用命令仓库。
 
-> 根目录 README 只作为 **总菜单 / 项目索引**。每个项目的详细说明、使用方法、参数、故障排查都放在对应子目录的 `README.md` 中。
+> **AI / Coding Agent：** 如果你准备修改、升级、重构或排查本仓库中的项目，请先阅读 [`AGENTS.md`](AGENTS.md)。不要只根据普通 README 或代码直接开始。
+
+根目录 README 主要作为 **总菜单 / 项目索引**。每个项目的详细使用方法放在项目 `README.md`；长期维护上下文由项目 `AGENTS.md` + `agent-context/` 管理。
 
 ## 快速导航
 
@@ -21,7 +23,7 @@
 
 | 项目 | 功能 | 平台 | 状态 | 版本 | 入口 |
 |---|---|---|---|---|---|
-| VLESS + Cloudflare | 新 VPS 一键部署、Cloudflare 优选域名测速、自动生成 VLESS 节点 | Linux + Windows | 🧪 待新机完整验证 | v1.1.1 | [查看项目](network/vless-cloudflare/) |
+| VLESS + Cloudflare | 新 VPS 一键部署、Cloudflare 候选域名测速、自动生成 VLESS 节点 | Linux + Windows | 🧪 待新机完整验证 | v1.2.0 | [查看项目](network/vless-cloudflare/) |
 
 ## 状态说明
 
@@ -30,81 +32,104 @@
 - 🚧 **开发中**：结构或功能尚未完成
 - 🗄 **已归档**：不再维护，仅保留历史参考
 
-## 仓库组织规则
+## 仓库维护体系
 
-一个完整功能作为一个独立项目目录管理。例如：
+长期维护项目统一采用：
 
 ```text
-network/vless-cloudflare/
-├─ README.md
-├─ deploy.sh
-├─ candidate-domains.txt
-└─ docs/
+project-name/
+├─ README.md                 # 给人看的使用说明
+├─ AGENTS.md                 # AI / Coding Agent 接管入口
+├─ CHANGELOG.md              # 项目版本更新记录
+├─ agent-context/            # AI 长期项目上下文
+│  ├─ CONTEXT.md
+│  ├─ STATE.md
+│  ├─ DECISIONS.md
+│  ├─ HISTORY.md
+│  └─ ROADMAP.md
+└─ ...                       # 按项目需要增加实际目录
 ```
 
-即使项目同时包含 Linux `.sh`、Windows `.bat`、配置文件和文档，也放在 **同一个项目目录** 中，不按文件类型拆散。
+### 文件职责
 
-建议长期保持以下结构：
+- `README.md`：是什么、怎么安装、怎么使用、输出是什么。
+- `AGENTS.md`：告诉 AI 修改前应该读哪些长期上下文，并规定维护流程。
+- `CHANGELOG.md`：版本发生了什么变化。
+- `agent-context/CONTEXT.md`：长期稳定的项目目标、边界、用户要求、核心关系。
+- `agent-context/STATE.md`：当前版本、当前状态、已验证/未验证内容、当前优先级。
+- `agent-context/DECISIONS.md`：重要设计决定以及为什么这样做。
+- `agent-context/HISTORY.md`：以后维护者容易重复踩的故障、兼容性坑和解决经验。
+- `agent-context/ROADMAP.md`：后续计划和明确不做的内容。
+
+AI 不需要每次无差别读完整历史。项目自己的 `AGENTS.md` 会按任务类型把 AI 路由到需要的文件。
+
+## 目录规划原则
+
+仓库一级目录按用途分类：
 
 ```text
 others/
 ├─ README.md
+├─ AGENTS.md
 ├─ CHANGELOG.md
+├─ templates/
+│  └─ project-template/
 ├─ network/
-│  ├─ README.md
-│  ├─ vless-cloudflare/
-│  ├─ cloudflare-speedtest/
-│  ├─ dns-tools/
-│  └─ routing-tools/
 ├─ server/
-│  ├─ README.md
-│  ├─ vps-init/
-│  ├─ nginx/
-│  ├─ docker/
-│  ├─ backup/
-│  └─ security/
 ├─ windows/
-│  ├─ README.md
-│  ├─ network/
-│  ├─ maintenance/
-│  ├─ powershell/
-│  └─ batch/
 ├─ deployment/
-│  ├─ README.md
-│  ├─ web/
-│  ├─ nodejs/
-│  ├─ database/
-│  └─ reverse-proxy/
 ├─ diagnostics/
-│  ├─ README.md
-│  ├─ server-check/
-│  ├─ speedtest/
-│  └─ connectivity/
 └─ archive/
-   └─ README.md
+```
+
+每个完整功能作为一个独立项目，不把同一个项目的 `.sh`、`.bat`、配置和文档拆到不同一级目录。
+
+项目内部根据实际需要增加：
+
+```text
+scripts/
+config/
+docs/
+tests/
+examples/
+src/
+assets/
+```
+
+但**不为了统一外观创建大量空目录**。
+
+例如当前 VLESS 项目：
+
+```text
+network/vless-cloudflare/
+├─ README.md
+├─ AGENTS.md
+├─ CHANGELOG.md
+├─ agent-context/
+├─ scripts/
+│  └─ deploy.sh
+├─ config/
+│  └─ candidate-domains.txt
+└─ docs/
+   └─ architecture.md
 ```
 
 ## 新项目约定
 
-以后新增工具时，原则上至少包含：
+新增需要长期维护的项目时，优先参考：
+
+[`templates/project-template/`](templates/project-template/)
+
+最低维护骨架建议包含：
 
 ```text
-project-name/
-├─ README.md
-└─ 主脚本或主程序
+README.md
+AGENTS.md
+CHANGELOG.md
+agent-context/
 ```
 
-项目 README 建议固定包含：
-
-1. 功能
-2. 适用场景
-3. 快速使用
-4. 文件说明
-5. 工作原理
-6. 输出结果
-7. 注意事项
-8. 故障排查
-9. 版本信息
+然后再按项目实际复杂度增加代码/脚本目录。
 
 ## 安全约定
 
@@ -115,17 +140,17 @@ project-name/
 - Origin CA 私钥
 - 服务器账户密码
 - Cookie / Access Token
-- 实际生产服务器的敏感实例配置
+- 真实生产服务器的敏感实例配置
 
-通用部署脚本可以生成 UUID、WS Path 等实例参数，但这些参数应保留在目标服务器本地，不自动回传 GitHub。
+通用部署脚本可以在目标机器本地生成 UUID、WS Path 等实例参数，但这些参数应保留在目标机器，不自动回传 GitHub。
 
 ## 最近更新
 
-- VLESS + Cloudflare 升级到 `v1.1.1`
-- 默认候选域名只保留 BASE、`cf.090227.xyz` 和主要官方站点 Cloudflare 域名
-- 移除“更多优选域名”中的第三方候选
-- 节点说明仅保留 Address、域名介绍和 VLESS 链接
-- 移除静态电信 / 移动 / 联通推荐字段
-- Windows BAT 继续使用真实 VLESS 下载测速并自动排名
+- 建立仓库级 [`AGENTS.md`](AGENTS.md) 作为 AI / Coding Agent 总入口
+- 建立 `agent-context/` 长期项目记忆规范
+- 增加 [`templates/project-template/`](templates/project-template/) 新项目模板
+- VLESS + Cloudflare 升级到 `v1.2.0` 并迁移到标准目录结构
+- VLESS 部署脚本移动到 `scripts/deploy.sh`
+- VLESS 候选域名清单移动到 `config/candidate-domains.txt`
 
-完整变更记录见 [CHANGELOG.md](CHANGELOG.md)。
+完整仓库级变更记录见 [`CHANGELOG.md`](CHANGELOG.md)。
