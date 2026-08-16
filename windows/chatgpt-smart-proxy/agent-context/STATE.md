@@ -18,6 +18,7 @@
 - Go GUI subsystem + Xray `CREATE_NO_WINDOW`。
 - 安装目录原地运行，兼容中文和空格路径。
 - 当前用户数据与发布文件隔离。
+- GitHub Actions Windows runner 自动测试、编译、校验 Xray 并生成 `releases/` ZIP。
 
 ## 验证状态
 

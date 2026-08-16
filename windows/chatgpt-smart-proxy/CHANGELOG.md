@@ -11,6 +11,7 @@
 - 节点数据改为 `data/state.json`，运行配置独立为 `data/active.json`。
 - Chrome 扩展继续支持仅 ChatGPT/OpenAI、常用 AI、浏览器全局三种分流模式。
 - 发布 Windows x64 成品 ZIP。
+- 增加 GitHub Actions 可复现打包流程，固定 Xray v26.3.27 并校验上游 ZIP SHA-256。
 
 ## v0.1.1 - 2026-08-15
 

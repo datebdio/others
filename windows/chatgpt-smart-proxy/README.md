@@ -88,7 +88,7 @@ GOOS=windows GOARCH=amd64 go build -ldflags="-H=windowsgui" -o ChatGPTProxy.exe 
 ## 安全边界
 
 - 本地管理 API 只监听 `127.0.0.1`。
-- 浏览器跨域访问只允许 `chrome-extension://` Origin。
+- 浏览器跨域访问只允许 `chrome-extension://` / `edge-extension://` Origin。
 - 不在仓库中保存实际节点、订阅地址、Token、Cookie 或其他生产密钥。
 - 本项目只负责用户自行配置的网络代理和浏览器分流，不包含绕过账号限制、风控或服务端保护措施的功能。
 
@@ -97,3 +97,5 @@ GOOS=windows GOARCH=amd64 go build -ldflags="-H=windowsgui" -o ChatGPTProxy.exe 
 `releases/ChatGPT-Smart-Proxy-v0.2.0-Windows-x64.zip`
 
 以 `releases/SHA256SUMS.txt` 为准。
+
+仓库内 `.github/workflows/chatgpt-smart-proxy-build.yml` 会在核心源码/扩展/安装脚本发生变化时，在 Windows runner 上执行测试、编译并重新生成发布 ZIP；Xray v26.3.27 下载包会进行固定 SHA-256 校验。
