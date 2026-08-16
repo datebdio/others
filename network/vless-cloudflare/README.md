@@ -2,62 +2,55 @@
 
 目录：`network/vless-cloudflare/`
 
-## 目标
+当前版本：**v1.1.0**
 
-把新 VPS 固定成一套可重复的结构：
+## 功能
+
+把新 VPS 固定成一套可重复的：
 
 ```text
 Client
   -> Cloudflare entry (Address)
-  -> TLS SNI / WS Host = your business domain
-  -> Cloudflare proxied hostname
+  -> TLS SNI / WS Host = 业务域名
+  -> Cloudflare
   -> Nginx :443
-  -> WebSocket path
+  -> WebSocket
   -> Xray 127.0.0.1:10000+
 ```
 
 部署完成后：
 
-1. 先用自己的业务域名作为 `Address` 验证 BASE 节点。
-2. 再在 Windows 运行自动生成的 BAT。
-3. BAT 仅改变 `Address`，保持 UUID / Path / Host / SNI 不变。
-4. 用真实下载速度筛 PRIMARY / BACKUP。
+1. 先使用自己的业务域名作为 `Address` 验证 BASE。
+2. 再把自动生成的 BAT 复制到 Windows v2rayN 目录测速。
+3. BAT 只改变 `Address`，UUID / Path / Host / SNI 不变。
+4. 根据真实下载速度选 PRIMARY / BACKUP。
 5. 永远保留 BASE 作为故障排查与兜底。
 
 ## Cloudflare 前置准备
 
-脚本**不调用 Cloudflare API**，只负责 VPS 内部。
+脚本只负责 **VPS 内部**，不调用 Cloudflare API。
 
-运行前请先在 Cloudflare 后台完成：
+运行前先完成：
 
-1. 创建业务域名，例如 `v3.example.com`。
-2. A 记录指向新 VPS IP。
-3. 开启橙云代理。
-4. SSL/TLS 模式使用 **Full (strict)**。
-5. 创建覆盖该业务域名的 Cloudflare Origin Certificate。
-6. 把证书和私钥上传到 VPS，例如：
+1. Cloudflare 创建业务域名，例如 `v3.example.com`。
+2. A 记录指向 VPS IP。
+3. 开启橙云。
+4. SSL/TLS 使用 **Full (strict)**。
+5. 创建覆盖业务域名的 Cloudflare Origin Certificate。
+6. 上传到 VPS，例如：
 
 ```text
 /root/origin.crt
 /root/origin.key
 ```
 
-Cloudflare Full (strict) 会验证回源证书；Cloudflare Origin CA 证书可用于该模式。
-
-参考：
-
-- Cloudflare Full (strict): https://developers.cloudflare.com/ssl/origin-configuration/ssl-modes/full-strict/
-- Cloudflare Origin CA: https://developers.cloudflare.com/ssl/origin-configuration/origin-ca/
-
 ## 一键执行
-
-当前仓库为公开仓库时，可以在新 VPS 上：
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/datebdio/others/main/network/vless-cloudflare/deploy.sh)"
 ```
 
-然后按提示输入：
+按提示输入：
 
 ```text
 Business domain
@@ -65,7 +58,7 @@ Origin certificate path
 Origin private key path
 ```
 
-也可以把脚本下载后一次传入：
+也可以：
 
 ```bash
 bash deploy.sh v3.example.com /root/origin.crt /root/origin.key
@@ -73,28 +66,28 @@ bash deploy.sh v3.example.com /root/origin.crt /root/origin.key
 
 ## 脚本会做什么
 
-- 仅支持 Debian / Ubuntu（v1.0）
+- Debian / Ubuntu
 - 安装 Nginx、curl、openssl 等依赖
 - 使用 XTLS 官方安装器安装/升级 Xray
-- 创建独立系统用户 `xrayproxy`
+- 创建独立 Xray 系统用户
 - 自动生成 UUID
 - 自动生成随机 WebSocket Path
-- 从 `10000-10100` 自动选择空闲 Xray 内部端口
-- 写入 VLESS inbound
+- 自动选择 `10000-10100` 的空闲内部端口
+- 写入 VLESS + WebSocket 配置
 - 配置 Nginx 443 + TLS + WebSocket 反代
-- 检查证书与私钥是否匹配
-- 检查 Xray 配置
+- 验证证书与私钥
+- Xray 配置检查
 - `nginx -t`
-- 启动并启用 systemd 服务
+- systemd 启动与开机启动
 - 本机 HTTPS 200 测试
-- 本机 WebSocket `101 Switching Protocols` 测试
-- 生成所有候选 VLESS
+- 本机 WebSocket 101 测试
+- 生成候选 VLESS 节点
 - 生成 Windows 自动测速 BAT
-- 对已有配置做备份；失败时尽量恢复原配置
+- 已有配置先备份，部署失败尽量恢复
 
-## 为什么使用 `clients` + `network: "ws"`
+## 固定 Xray 配置
 
-本模块当前固定使用：
+本项目使用已经实际验证过的：
 
 ```json
 "settings": {
@@ -114,36 +107,16 @@ bash deploy.sh v3.example.com /root/origin.crt /root/origin.key
 }
 ```
 
-原因：
+即：
 
-- Xray-core 当前 VLESS 配置测试仍包含 `clients`。
-- XTLS 官方 VLESS-WSS-Nginx 示例仍使用 `network: "ws"`。
-- 这套组合已经在实际 Xray 26.3.27 服务端 + v2rayN/Xray 25.1.1 客户端上验证通过。
-
-上游文档正在向新的配置表示方式迁移。未来升级本模块时，必须先做兼容性实测，不应仅因文档字段更新就直接替换生产配置。
-
-参考：
-
-- Xray-core VLESS config test: https://github.com/XTLS/Xray-core/blob/main/infra/conf/vless_test.go
-- XTLS VLESS-WSS-Nginx example: https://github.com/XTLS/Xray-examples/tree/main/VLESS-WSS-Nginx
-- Xray WebSocket docs: https://xtls.github.io/en/config/transports/websocket
-
-## Nginx WebSocket
-
-Nginx 反代 WebSocket 时会显式转发：
-
-```nginx
-proxy_set_header Upgrade $http_upgrade;
-proxy_set_header Connection "upgrade";
+```text
+VLESS inbound -> settings.clients
+WebSocket     -> streamSettings.network = "ws"
 ```
-
-参考：
-
-https://nginx.org/en/docs/http/websocket.html
 
 ## 部署输出
 
-成功后 VPS 本地会生成：
+成功后生成：
 
 ```text
 /root/deploy-info.txt
@@ -152,13 +125,20 @@ https://nginx.org/en/docs/http/websocket.html
 /root/test-vless-domains.bat
 ```
 
-### `deploy-info.txt`
-
-保存这台服务器的部署参数和文件位置。权限为 root-only。
-
 ### `vless-nodes.txt`
 
-包含 BASE、第三方动态优选、运营商专项和官方站点 Cloudflare 域名候选的完整 VLESS 链接及说明。
+每个候选节点只保留必要说明：
+
+```text
+[节点名称]
+Address  : 域名
+域名介绍 : 简单介绍
+推荐     : 电信/移动/联通
+
+vless://...
+```
+
+不再输出冗长的 Type / For / Note。
 
 ### `test-vless-domains.bat`
 
@@ -175,14 +155,20 @@ BAT 会：
 - 最终按平均 MB/s 排名
 - 自动输出 PRIMARY / BACKUP / BASE VLESS
 
-默认测试量较大。12 个候选 × 20 MB × 3 次理论上可超过 700 MB，请按实际流量情况调整 BAT 顶部：
+当前默认 7 个候选，理论测速流量约：
+
+```text
+7 × 20 MB × 3 = 420 MB
+```
+
+可在 BAT 顶部调整：
 
 ```bat
 set "TEST_BYTES=20000000"
 set "ROUNDS=3"
 ```
 
-## Address / Host / SNI 的固定规则
+## Address / Host / SNI
 
 优选时只改：
 
@@ -190,7 +176,7 @@ set "ROUNDS=3"
 Address
 ```
 
-不要改：
+以下保持不变：
 
 ```text
 Host = 业务域名
@@ -207,102 +193,58 @@ Host    = v3.example.com
 SNI     = v3.example.com
 ```
 
-`Address` 决定连接哪个 Cloudflare entry；`Host/SNI` 决定 Cloudflare 最终识别哪个业务 hostname。
+## 候选域名策略
 
-## 候选域名分类
+从 v1.1.0 开始，候选列表做了明显精简。
 
-候选清单在：
+**保留：**
 
-`candidate-domains.txt`
+- 自己的 BASE 业务域名
+- `cf.090227.xyz` 站点自己的三网优选域名
+- 该站“官方优选域名”中的一组主要候选
+
+**移除：**
+
+- `cloudflare-dl.byoip.top`
+- `cf.877774.xyz`
+- `saas.sin.fan`
+- `bestcf.030101.xyz`
+- `cloudflare.182682.xyz`
+- 以及“更多优选域名”中的其他第三方域名
+
+原因：实际使用中这组“更多优选域名”表现不理想，不再作为默认候选。
+
+### 当前候选
+
+| 名称 | Address | 域名介绍 | 推荐 |
+|---|---|---|---|
+| BASE | 业务域名 | 自己的 Cloudflare 原始入口和兜底 | 电信/移动/联通 |
+| CF090227 | `cf.090227.xyz` | 优选站点自己的三网优选域名 | 电信/移动/联通 |
+| VISA | `www.visa.cn` | Visa 中国官网 Cloudflare 域名 | 电信/移动/联通 |
+| MFA | `mfa.gov.ua` | 乌克兰外交部官网 Cloudflare 域名 | 电信/移动/联通 |
+| SHOPIFY | `www.shopify.com` | Shopify 官网 Cloudflare 域名 | 电信/移动/联通 |
+| UBISOFT | `store.ubi.com` | Ubisoft 官方商店 Cloudflare 域名 | 电信/移动/联通 |
+| NEXUS | `staticdelivery.nexusmods.com` | NexusMods 静态资源 Cloudflare 域名 | 电信/移动/联通 |
+
+这里的“推荐”只是说明适合在哪些线路上作为候选进行测试，不代表一定比 BASE 快。最终仍以 BAT 在当前网络的真实下载结果为准。
 
 来源站点：
 
 https://cf.090227.xyz/
 
-截至 2026-08-16，该站点将候选大致分为：
+其中该站当前把 `*.cf.090227.xyz` 标注为三网优选，并单独列出了 Visa、MFA、Shopify、Ubisoft、NexusMods 等官方站点 Cloudflare 域名。
 
-### BASE
+“官方站点域名”只表示这些 hostname 属于对应品牌/机构并使用 Cloudflare，不表示品牌方或 Cloudflare 为 VLESS/代理用途提供或背书服务。
 
-自己的 Cloudflare 橙云业务域名。
+## 选节点原则
 
-优点：
-
-- 不依赖第三方优选 DNS
-- 最适合故障排查
-- 必须保留
-
-缺点：
-
-- Cloudflare Anycast 自动分配不一定是当前网络最快入口
-
-### 第三方三网候选
-
-包括：
-
-- `cf.090227.xyz`
-- `cloudflare-dl.byoip.top`
-- `cf.877774.xyz`
-- `saas.sin.fan`
-
-来源站点将这些标注为三网优选候选。
-
-优点：
-
-- 维护方可以动态调整其 DNS 后端
-- 用户不必固定记某一个 IP
-
-缺点：
-
-- 依赖第三方 DNS 和维护策略
-- “三网优选”不等于在你的实际网络一定更快
-- 必须以真实下载测试为准
-
-### 中国移动专项
-
-`bestcf.030101.xyz`
-
-来源站点明确标注为中国移动专属优选。
-
-适合：
-
-- China Mobile 优先测试
-
-电信/联通用户也可以测试，但不要预设它一定更优。
-
-### 官方站点 Cloudflare 域名候选
-
-包括：
-
-- `www.visa.cn`
-- `mfa.gov.ua`
-- `www.shopify.com`
-- `store.ubi.com`
-- `staticdelivery.nexusmods.com`
-
-这里的“官方站点”是指这些 hostname 属于对应组织/品牌并使用 Cloudflare。**不表示这些品牌或 Cloudflare 官方为 VLESS/代理用途提供或背书“优选服务”。**
-
-优点：
-
-- 不依赖个人维护的优选域名
-- 某些网络下可能有较稳定的 Cloudflare entry
-
-缺点：
-
-- 不是针对电信/联通/移动专门设计
-- DNS 和路由随时可能改变
-- 某个域名今天快，不代表长期都快
-
-## 选节点的原则
-
-不要只看峰值。
-
-推荐排序：
+长期主用建议优先：
 
 1. `Success = 3/3`
 2. Average MB/s
 3. Worst MB/s
 4. 波动大小
-5. 最后才看延迟
+5. 延迟
 
 例如：
 
@@ -315,7 +257,7 @@ B: 4.80 / timeout / 1.20 MB/s
 
 ## 安全
 
-不要把以下实例文件提交到 GitHub：
+不要提交：
 
 ```text
 origin.key
@@ -324,14 +266,16 @@ vless-nodes.txt
 test-vless-domains.bat
 ```
 
-仓库 `.gitignore` 已包含常见敏感/生成文件，但仍需人工确认提交内容。
+实例 UUID、WS Path、证书私钥等只保留在目标 VPS 本地。
 
 ## 更新策略
 
 优选域名具有时效性。
 
-未来更新时优先修改：
+以后优先更新：
 
-`candidate-domains.txt`
+```text
+candidate-domains.txt
+```
 
-如果 Xray/Nginx 上游配置方式发生变化，先在测试 VPS 验证 200 / 101 / VLESS 鉴权 / 真实下载全部正常，再升级 `deploy.sh`。
+如果 Xray / Nginx 上游配置发生变化，必须先在测试 VPS 验证 HTTPS 200、WebSocket 101、VLESS 鉴权和真实下载全部正常，再升级生产版本。
