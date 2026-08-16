@@ -1,8 +1,12 @@
 # VLESS + Cloudflare 新 VPS 标准部署
 
+> **AI / Coding Agent：** 如果任务涉及修改、升级、重构或排查本项目，请先阅读 [`AGENTS.md`](AGENTS.md)。不要只根据本 README 或脚本直接开始。
+
 目录：`network/vless-cloudflare/`
 
-当前版本：**v1.1.1**
+当前版本：**v1.2.0**
+
+状态：**🧪 测试中，待全新 VPS 完整验证**
 
 ## 功能
 
@@ -24,7 +28,30 @@ Client
 2. 再把自动生成的 BAT 复制到 Windows v2rayN 目录测速。
 3. BAT 只改变 `Address`，UUID / Path / Host / SNI 不变。
 4. 根据真实下载速度选 PRIMARY / BACKUP。
-5. 永远保留 BASE 作为故障排查与兜底。
+5. 保留 BASE 作为故障排查与兜底。
+
+## 项目目录
+
+```text
+vless-cloudflare/
+├─ README.md
+├─ AGENTS.md
+├─ CHANGELOG.md
+├─ agent-context/
+│  ├─ CONTEXT.md
+│  ├─ STATE.md
+│  ├─ DECISIONS.md
+│  ├─ HISTORY.md
+│  └─ ROADMAP.md
+├─ scripts/
+│  └─ deploy.sh
+├─ config/
+│  └─ candidate-domains.txt
+└─ docs/
+   └─ architecture.md
+```
+
+普通使用主要看本 README；AI / Agent 长期维护规则见 `AGENTS.md` 和 `agent-context/`。
 
 ## Cloudflare 前置准备
 
@@ -46,8 +73,16 @@ Client
 
 ## 一键执行
 
+当前脚本路径：
+
+```text
+scripts/deploy.sh
+```
+
+新 VPS 上可以直接：
+
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/datebdio/others/main/network/vless-cloudflare/deploy.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/datebdio/others/main/network/vless-cloudflare/scripts/deploy.sh)"
 ```
 
 按提示输入：
@@ -58,15 +93,15 @@ Origin certificate path
 Origin private key path
 ```
 
-也可以：
+也可以先下载脚本，再执行：
 
 ```bash
-bash deploy.sh v3.example.com /root/origin.crt /root/origin.key
+bash scripts/deploy.sh v3.example.com /root/origin.crt /root/origin.key
 ```
 
 ## 脚本会做什么
 
-- Debian / Ubuntu
+- 支持 Debian / Ubuntu
 - 安装 Nginx、curl、openssl 等依赖
 - 使用 XTLS 官方安装器安装/升级 Xray
 - 创建独立 Xray 系统用户
@@ -81,13 +116,13 @@ bash deploy.sh v3.example.com /root/origin.crt /root/origin.key
 - systemd 启动与开机启动
 - 本机 HTTPS 200 测试
 - 本机 WebSocket 101 测试
-- 生成候选 VLESS 节点
+- 读取 `config/candidate-domains.txt` 生成候选 VLESS 节点
 - 生成 Windows 自动测速 BAT
 - 已有配置先备份，部署失败尽量恢复
 
 ## 固定 Xray 配置
 
-本项目使用已经实际验证过的：
+当前项目使用已经实际验证过的服务端配置方向：
 
 ```json
 "settings": {
@@ -114,9 +149,13 @@ VLESS inbound -> settings.clients
 WebSocket     -> streamSettings.network = "ws"
 ```
 
+这些核心兼容决策的原因记录在：
+
+[`agent-context/DECISIONS.md`](agent-context/DECISIONS.md)
+
 ## 部署输出
 
-成功后生成：
+成功后 VPS 本地生成：
 
 ```text
 /root/deploy-info.txt
@@ -137,7 +176,7 @@ Address  : 域名
 vless://...
 ```
 
-不再输出 Type / For / Note，也不再维护静态“推荐线路”字段。
+不输出 Type / For / Note，也不维护静态“推荐线路”字段。
 
 ### `test-vless-domains.bat`
 
@@ -160,7 +199,7 @@ BAT 会：
 7 × 20 MB × 3 = 420 MB
 ```
 
-可在 BAT 顶部调整：
+可在生成的 BAT 顶部调整：
 
 ```bat
 set "TEST_BYTES=20000000"
@@ -192,28 +231,17 @@ Host    = v3.example.com
 SNI     = v3.example.com
 ```
 
+更完整的链路说明见：
+
+[`docs/architecture.md`](docs/architecture.md)
+
 ## 候选域名策略
 
-从 v1.1.0 开始，候选列表做了明显精简。
+候选清单现在统一维护在：
 
-**保留：**
+[`config/candidate-domains.txt`](config/candidate-domains.txt)
 
-- 自己的 BASE 业务域名
-- `cf.090227.xyz` 站点自己的三网优选域名
-- 该站“官方优选域名”中的一组主要候选
-
-**移除：**
-
-- `cloudflare-dl.byoip.top`
-- `cf.877774.xyz`
-- `saas.sin.fan`
-- `bestcf.030101.xyz`
-- `cloudflare.182682.xyz`
-- 以及“更多优选域名”中的其他第三方域名
-
-原因：实际使用中这组“更多优选域名”表现不理想，不再作为默认候选。
-
-### 当前候选
+当前保留：
 
 | 名称 | Address | 域名介绍 |
 |---|---|---|
@@ -225,11 +253,15 @@ SNI     = v3.example.com
 | UBISOFT | `store.ubi.com` | Ubisoft 官方商店 Cloudflare 域名 |
 | NEXUS | `staticdelivery.nexusmods.com` | NexusMods 静态资源 Cloudflare 域名 |
 
-不再给候选域名预设电信 / 移动 / 联通推荐。最终以 BAT 在当前网络的真实下载结果为准。
+已经移除“更多优选域名”中的第三方默认候选，因为实际使用/手工测试整体表现不理想。
+
+不再给候选域名预设电信 / 移动 / 联通推荐，最终以 BAT 在当前网络的真实下载结果为准。
 
 来源站点：
 
+```text
 https://cf.090227.xyz/
+```
 
 “官方站点域名”只表示这些 hostname 属于对应品牌/机构并使用 Cloudflare，不表示品牌方或 Cloudflare 为 VLESS/代理用途提供或背书服务。
 
@@ -265,14 +297,24 @@ test-vless-domains.bat
 
 实例 UUID、WS Path、证书私钥等只保留在目标 VPS 本地。
 
-## 更新策略
+## 维护与版本
 
-优选域名具有时效性。
+项目版本更新记录：
 
-以后优先更新：
+[`CHANGELOG.md`](CHANGELOG.md)
+
+AI / Coding Agent 当前状态与长期维护上下文：
+
+[`AGENTS.md`](AGENTS.md)
 
 ```text
-candidate-domains.txt
+agent-context/
 ```
 
-如果 Xray / Nginx 上游配置发生变化，必须先在测试 VPS 验证 HTTPS 200、WebSocket 101、VLESS 鉴权和真实下载全部正常，再升级生产版本。
+候选域名具有时效性。以后优先更新：
+
+```text
+config/candidate-domains.txt
+```
+
+如果 Xray / Nginx 上游配置发生变化，必须先在测试 VPS 验证 HTTPS 200、WebSocket 101、VLESS 鉴权和真实下载全部正常，再升级核心配置。
