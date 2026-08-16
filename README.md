@@ -25,6 +25,12 @@
 |---|---|---|---|---|---|
 | VLESS + Cloudflare | 新 VPS 一键部署、Cloudflare 候选域名测速、自动生成 VLESS 节点 | Linux + Windows | 🧪 待新机完整验证 | v1.2.0 | [查看项目](network/vless-cloudflare/) |
 
+### 🪟 Windows
+
+| 项目 | 功能 | 平台 | 状态 | 版本 | 入口 |
+|---|---|---|---|---|---|
+| ChatGPT Smart Proxy | Chromium 浏览器按域名分流代理，支持 VLESS / VMess / Trojan 多节点管理、Xray 后台运行与 ChatGPT/OpenAI 专用分流 | Windows + Chrome/Edge | 🧪 测试中 | v0.2.0 | [查看项目](windows/chatgpt-smart-proxy/) |
+
 ## 状态说明
 
 - ✅ **稳定**：已在目标环境完整验证，可作为常用版本
@@ -146,6 +152,7 @@ agent-context/
 
 ## 最近更新
 
+- 新增 [`windows/chatgpt-smart-proxy/`](windows/chatgpt-smart-proxy/)：Chromium 浏览器按域名分流代理工具，当前版本 `v0.2.0`
 - 建立仓库级 [`AGENTS.md`](AGENTS.md) 作为 AI / Coding Agent 总入口
 - 建立 `agent-context/` 长期项目记忆规范
 - 增加 [`templates/project-template/`](templates/project-template/) 新项目模板
